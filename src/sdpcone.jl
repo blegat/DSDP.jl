@@ -5,28 +5,32 @@ module SDPCone
 import ..@dsdp_ccall
 const SDPConeT = Ptr{Void}
 
-function SetBlockSize(sdpcone::SDPConeT, i::Integer, j::Integer)
-    @dsdp_ccall SDPConeSetBlockSize (SDPConeT, Cint, Cint) sdpcone i j
+function SetBlockSize(sdpcone::SDPConeT, blockj::Integer, n::Integer)
+    @dsdp_ccall SDPConeSetBlockSize (SDPConeT, Cint, Cint) sdpcone blockj n
 end
 
-function GetBlockSize(sdpcone::SDPConeT, arg2::Integer, arg3)
-    @dsdp_ccall SDPConeGetBlockSize (SDPConeT, Cint, Ptr{Cint}) sdpcone arg2 arg3
+function GetBlockSize(sdpcone::SDPConeT, blockj::Integer)
+    n = Ref{Cint}()
+    @dsdp_ccall SDPConeGetBlockSize (SDPConeT, Cint, Ref{Cint}) sdpcone blockj n
+    n[]
 end
 
-function SetStorageFormat(sdpcone::SDPConeT, arg2::Integer, arg3::UInt8)
-    @dsdp_ccall SDPConeSetStorageFormat (SDPConeT, Cint, UInt8) sdpcone arg2 arg3
+function SetStorageFormat(sdpcone::SDPConeT, blockj::Integer, format)
+    @dsdp_ccall SDPConeSetStorageFormat (SDPConeT, Cint, Cchar) sdpcone blockj format
 end
 
-function GetStorageFormat(sdpcone::SDPConeT, arg2::Integer, arg3)
-    @dsdp_ccall SDPConeGetStorageFormat (SDPConeT, Cint, Cstring) sdpcone arg2 arg3
+function GetStorageFormat(sdpcone::SDPConeT, blockj::Integer)
+    format = Ref{Cchar}()
+    @dsdp_ccall SDPConeGetStorageFormat (SDPConeT, Cint, Ref{Cchar}) sdpcone blockj format
+    format[]
 end
 
-function CheckStorageFormat(sdpcone::SDPConeT, arg2::Integer, arg3::UInt8)
-    @dsdp_ccall SDPConeCheckStorageFormat (SDPConeT, Cint, UInt8) sdpcone arg2 arg3
+function CheckStorageFormat(sdpcone::SDPConeT, blockj::Integer, format)
+    @dsdp_ccall SDPConeCheckStorageFormat (SDPConeT, Cint, Cchar) sdpcone blockj format
 end
 
-function SetSparsity(sdpcone::SDPConeT, arg2::Integer, arg3::Integer)
-    @dsdp_ccall SDPConeSetSparsity (SDPConeT, Cint, Cint) sdpcone arg2 arg3
+function SetSparsity(sdpcone::SDPConeT, blockj::Integer, nnz::Integer)
+    @dsdp_ccall SDPConeSetSparsity (SDPConeT, Cint, Cint) sdpcone blockj nnz
 end
 
 function View(sdpcone::SDPConeT)
@@ -41,8 +45,12 @@ function View3(sdpcone::SDPConeT)
     @dsdp_ccall SDPConeView3 (SDPConeT,) sdpcone
 end
 
-function SetASparseVecMat(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer, arg5::Cdouble, arg6::Integer, arg7, arg8, arg9::Integer)
-    @dsdp_ccall SDPConeSetASparseVecMat (SDPConeT, Cint, Cint, Cint, Cdouble, Cint, Ptr{Cint}, Ptr{Cdouble}, Cint) sdpcone arg2 arg3 arg4 arg5 arg6 arg7 arg8 arg9
+function SetASparseVecMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, α::AbstractFloat, ishift::Integer, ind::Vector{Cint}, val::Vector{Cdouble})
+    @assert length(ind) == length(val)
+    SetASparseVecMat(sdpcone, blockj, vari, n, α, ishift, pointer(ind), pointer(val), length(ind))
+end
+function SetASparseVecMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, α::AbstractFloat, ishift::Integer, ind::Ptr{Cint}, val::Ptr{Cdouble}, nnz::Integer)
+    @dsdp_ccall SDPConeSetASparseVecMat (SDPConeT, Cint, Cint, Cint, Cdouble, Cint, Ptr{Cint}, Ptr{Cdouble}, Cint) sdpcone blockj vari n α ishift ind val nnz
 end
 
 function SetADenseVecMat(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer, arg5::Cdouble, arg6, arg7::Integer)
@@ -149,44 +157,44 @@ function AddADotX(sdpcone::SDPConeT, arg2::Integer, arg3::Cdouble, arg4, arg5::I
     @dsdp_ccall SDPConeAddADotX (SDPConeT, Cint, Cdouble, Ptr{Cdouble}, Cint, Ptr{Cdouble}, Cint) sdpcone arg2 arg3 arg4 arg5 arg6 arg7
 end
 
-function ViewX(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4, arg5::Integer)
-    @dsdp_ccall SDPConeViewX (SDPConeT, Cint, Cint, Ptr{Cdouble}, Cint) sdpcone arg2 arg3 arg4 arg5
+function ViewX(sdpcone::SDPConeT, blockj::Integer, n::Integer, x::Vector{Cdouble})
+    @dsdp_ccall SDPConeViewX (SDPConeT, Cint, Cint, Ptr{Cdouble}, Cint) sdpcone blockj n pointer(x) length(x)
 end
 
-function SetLanczosIterations(sdpcone::SDPConeT, arg2::Integer)
-    @dsdp_ccall SDPConeSetLanczosIterations (SDPConeT, Cint) sdpcone arg2
+function SetLanczosIterations(sdpcone::SDPConeT, itmp::Integer)
+    @dsdp_ccall SDPConeSetLanczosIterations (SDPConeT, Cint) sdpcone itmp
 end
 
-function ScaleBarrier(sdpcone::SDPConeT, arg2::Integer, arg3::Cdouble)
-    @dsdp_ccall SDPConeScaleBarrier (SDPConeT, Cint, Cdouble) sdpcone arg2 arg3
+function ScaleBarrier(sdpcone::SDPConeT, blockj::Integer, gγ::AbstractFloat)
+    @dsdp_ccall SDPConeScaleBarrier (SDPConeT, Cint, Cdouble) sdpcone blockj gγ
 end
 
-function XVMultiply(sdpcone::SDPConeT, arg2::Integer, arg3::Vector, arg4::Vector)
+function XVMultiply(sdpcone::SDPConeT, blockj::Integer, vin::Vector, vout::Vector)
     n = length(arg3)
     @assert n == length(arg4)
     @dsdp_ccall SDPConeXVMultiply (SDPConeT, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Cint) sdpcone arg2 pointer(arg3) pointer(arg4) n
 end
 
-function ComputeXV(sdpcone::SDPConeT, arg2::Integer)
+function ComputeXV(sdpcone::SDPConeT, blockj::Integer)
     derror = Ref{Cint}()
-    @dsdp_ccall SDPConeComputeXV (SDPConeT, Cint, Ref{Cint}) sdpcone arg2 derror
+    @dsdp_ccall SDPConeComputeXV (SDPConeT, Cint, Ref{Cint}) sdpcone blockj derror
     derror[]
 end
 
-function AddXVAV(sdpcone::SDPConeT, arg2::Integer, arg3::Vector, arg5::Vector)
-    @dsdp_ccall SDPConeAddXVAV (SDPConeT, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble}, Cint) sdpcone arg2 pointer(arg3) length(arg3) pointer(arg5) length(arg5)
+function AddXVAV(sdpcone::SDPConeT, blockj::Integer, vin::Vector, sum::Vector)
+    @dsdp_ccall SDPConeAddXVAV (SDPConeT, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble}, Cint) sdpcone blockj pointer(vin) length(vin) pointer(sum) length(sum)
 end
 
-function UseLAPACKForDualMatrix(sdpcone::SDPConeT, arg2::Integer)
+function UseLAPACKForDualMatrix(sdpcone::SDPConeT, flag::Integer)
     @dsdp_ccall SDPConeUseLAPACKForDualMatrix (SDPConeT, Cint) sdpcone arg2
 end
 
-function UseFullSymmetricFormat(sdpcone::SDPConeT, arg2::Integer)
-    @dsdp_ccall SDPConeUseFullSymmetricFormat (SDPConeT, Cint) sdpcone arg2
+function UseFullSymmetricFormat(sdpcone::SDPConeT, blockj::Integer)
+    @dsdp_ccall SDPConeUseFullSymmetricFormat (SDPConeT, Cint) sdpcone blockj
 end
 
-function UsePackedFormat(sdpcone::SDPConeT, arg2::Integer)
-    @dsdp_ccall SDPConeUsePackedFormat (SDPConeT, Cint) sdpcone arg2
+function UsePackedFormat(sdpcone::SDPConeT, blockj::Integer)
+    @dsdp_ccall SDPConeUsePackedFormat (SDPConeT, Cint) sdpcone blockj
 end
 
 end
