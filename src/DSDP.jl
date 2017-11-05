@@ -22,6 +22,15 @@ const DSDPT = Ptr{Void}
 include("dsdp5_enums.jl")
 include("dsdp5_API.jl")
 
+function length2(ind, val)
+    @assert length(ind) == length(val)
+    length(ind)
+end
+function length3(a, b, c)
+    @assert length(a) == length2(b, c)
+    length(a)
+end
+
 include("lpcone.jl")
 function CreateLPCone(dsdp::DSDPT)
     lpcone = Ref{LPCone.LPConeT}()

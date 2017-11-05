@@ -6,9 +6,8 @@ import ..@dsdp_ccall
 const LPConeT = Ptr{Void}
 
 function buildlp(nvars, lpdvars, lpdrows, lpcoefs)
-    @assert length(lpdvars) == length(lpdrows) == length(lpcoefs)
+    n = length3(lpdvars, lpdrows, lpcoefs)
     nzin = zeros(Cint, nvars)
-    n = length(lpdvars)
     for var in lpdvars
         nzin[var] += 1
     end

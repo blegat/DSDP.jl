@@ -46,39 +46,38 @@ function View3(sdpcone::SDPConeT)
 end
 
 function SetASparseVecMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, α::AbstractFloat, ishift::Integer, ind::Vector{Cint}, val::Vector{Cdouble})
-    @assert length(ind) == length(val)
-    SetASparseVecMat(sdpcone, blockj, vari, n, α, ishift, pointer(ind), pointer(val), length(ind))
+    SetASparseVecMat(sdpcone, blockj, vari, n, α, ishift, pointer(ind), pointer(val), length2(ind, val))
 end
 function SetASparseVecMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, α::AbstractFloat, ishift::Integer, ind::Ptr{Cint}, val::Ptr{Cdouble}, nnz::Integer)
     @dsdp_ccall SDPConeSetASparseVecMat (SDPConeT, Cint, Cint, Cint, Cdouble, Cint, Ptr{Cint}, Ptr{Cdouble}, Cint) sdpcone blockj vari n α ishift ind val nnz
 end
 
-function SetADenseVecMat(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer, arg5::Cdouble, arg6, arg7::Integer)
-    @dsdp_ccall SDPConeSetADenseVecMat (SDPConeT, Cint, Cint, Cint, Cdouble, Ptr{Cdouble}, Cint) sdpcone arg2 arg3 arg4 arg5 arg6 arg7
+function SetADenseVecMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, α::AbstractFloat, val::Vector{Cdouble})
+    @dsdp_ccall SDPConeSetADenseVecMat (SDPConeT, Cint, Cint, Cint, Cdouble, Ptr{Cdouble}, Cint) sdpcone blockj vari n α pointer(val) length(val)
 end
 
-function SetARankOneMat(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer, arg5::Cdouble, arg6::Integer, arg7, arg8, arg9::Integer)
-    @dsdp_ccall SDPConeSetARankOneMat (SDPConeT, Cint, Cint, Cint, Cdouble, Cint, Ptr{Cint}, Ptr{Cdouble}, Cint) sdpcone arg2 arg3 arg4 arg5 arg6 arg7 arg8 arg9
+function SetARankOneMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, α::AbstractFloat, ishift::Integer, ind::Vector{Cint}, val::Vector{Cdouble})
+    @dsdp_ccall SDPConeSetARankOneMat (SDPConeT, Cint, Cint, Cint, Cdouble, Cint, Ptr{Cint}, Ptr{Cdouble}, Cint) sdpcone blockj vari n α ishift pointer(ind) pointer(val) length2(ind, val)
 end
 
-function SetConstantMat(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer, arg5::Cdouble)
-    @dsdp_ccall SDPConeSetConstantMat (SDPConeT, Cint, Cint, Cint, Cdouble) sdpcone arg2 arg3 arg4 arg5
+function SetConstantMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, value::AbstractFloat)
+    @dsdp_ccall SDPConeSetConstantMat (SDPConeT, Cint, Cint, Cint, Cdouble) sdpcone blockj vari n value
 end
 
-function SetZeroMat(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer)
-    @dsdp_ccall SDPConeSetZeroMat (SDPConeT, Cint, Cint, Cint) sdpcone arg2 arg3 arg4
+function SetZeroMat(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer)
+    @dsdp_ccall SDPConeSetZeroMat (SDPConeT, Cint, Cint, Cint) sdpcone blockj vari n
 end
 
-function SetIdentity(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer, arg5::Cdouble)
-    @dsdp_ccall SDPConeSetIdentity (SDPConeT, Cint, Cint, Cint, Cdouble) sdpcone arg2 arg3 arg4 arg5
+function SetIdentity(sdpcone::SDPConeT, blockj::Integer, vari::Integer, n::Integer, val::AbstractFloat)
+    @dsdp_ccall SDPConeSetIdentity (SDPConeT, Cint, Cint, Cint, Cdouble) sdpcone blockj vari n val
 end
 
-function ViewDataMatrix(sdpcone::SDPConeT, arg2::Integer, arg3::Integer)
-    @dsdp_ccall SDPConeViewDataMatrix (SDPConeT, Cint, Cint) sdpcone arg2 arg3
+function ViewDataMatrix(sdpcone::SDPConeT, blockj::Integer, vari::Integer)
+    @dsdp_ccall SDPConeViewDataMatrix (SDPConeT, Cint, Cint) sdpcone blockj vari
 end
 
-function MatrixView(sdpcone::SDPConeT, arg2::Integer)
-    @dsdp_ccall SDPConeMatrixView (SDPConeT, Cint) sdpcone arg2
+function MatrixView(sdpcone::SDPConeT, blockj::Integer)
+    @dsdp_ccall SDPConeMatrixView (SDPConeT, Cint) sdpcone blockj
 end
 
 function AddASparseVecMat(sdpcone::SDPConeT, arg2::Integer, arg3::Integer, arg4::Integer, arg5::Cdouble, arg6::Integer, arg7, arg8, arg9::Integer)
@@ -170,9 +169,7 @@ function ScaleBarrier(sdpcone::SDPConeT, blockj::Integer, gγ::AbstractFloat)
 end
 
 function XVMultiply(sdpcone::SDPConeT, blockj::Integer, vin::Vector, vout::Vector)
-    n = length(arg3)
-    @assert n == length(arg4)
-    @dsdp_ccall SDPConeXVMultiply (SDPConeT, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Cint) sdpcone arg2 pointer(arg3) pointer(arg4) n
+    @dsdp_ccall SDPConeXVMultiply (SDPConeT, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Cint) sdpcone blockj pointer(vin) pointer(vout) length2(vin, vout)
 end
 
 function ComputeXV(sdpcone::SDPConeT, blockj::Integer)
@@ -182,7 +179,7 @@ function ComputeXV(sdpcone::SDPConeT, blockj::Integer)
 end
 
 function AddXVAV(sdpcone::SDPConeT, blockj::Integer, vin::Vector, sum::Vector)
-    @dsdp_ccall SDPConeAddXVAV (SDPConeT, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble}, Cint) sdpcone blockj pointer(vin) length(vin) pointer(sum) length(sum)
+    @dsdp_ccall SDPConeAddXVAV (SDPConeT, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble}, Cint) sdpcone blockj pointer(vin) length(vin) pointer(sum) length2(vin, sum)
 end
 
 function UseLAPACKForDualMatrix(sdpcone::SDPConeT, flag::Integer)
